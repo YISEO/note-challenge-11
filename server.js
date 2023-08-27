@@ -4,7 +4,7 @@ const path = require('path');
 const PORT = 3001;
 
 const app = express();
-const { readFromFile, readAndAppend } = require('./helpers/fsUtils');
+const { readFromFile, writeToFile, readAndAppend } = require('./helpers/fsUtils');
 const uuid = require('./helpers/uuid');
 
 
@@ -48,6 +48,27 @@ app.post('/api/notes', (req, res) => {
     }else{
         res.error(`Error in adding note`);
     }
+});
+
+// Delete request to remove a note
+app.delete('/api/notes/:id', (req, res) => {
+    const noteId = req.params.id;
+    
+    readFromFile('./db/db.json')
+        .then((data) => JSON.parse(data))
+        .then((notes) => {
+            // Use filter to create a new array without the note with the given id
+            const updatedNotes = notes.filter((note) => note.id !== noteId);
+
+            // Write the updated notes array back to the file
+            return writeToFile("./db/db.json", updatedNotes);
+        })
+        .then(() => {
+            res.json(`Note with id ${noteId} deleted successfully`);
+        })
+        .catch((err) => {
+            res.status(500).json({ error: "Internal server error" });
+        });
 });
 
 
